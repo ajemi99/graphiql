@@ -1,9 +1,9 @@
 import { loginHtml } from "./config.js"
-// import { infoUser } from "./infoUser.js"
+ import { infoUser } from "./infoUser.js"
 
 
 export const login = () => {
-
+    document.body.innerHTML = ""
    const div = document.createElement("div")
    div.className = "container"
    div.innerHTML = loginHtml
@@ -27,10 +27,10 @@ export const login = () => {
             })
            
                 const data = await response.json()
-                console.log(data)
+                console.log("gdhf",data)
                 if (data.error)throw data.error
                 localStorage.setItem("token", data)
-         
+                infoUser()
             
         } catch (error) {
            errorhandl(error)
