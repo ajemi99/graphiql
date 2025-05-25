@@ -1,7 +1,7 @@
 import { profilHtml } from "./config.js"
 import { Fetch } from "./fetch.js"
 import { login } from "./login.js"
-import { level, projectsQuery, user, userInfo, xp } from "./query.js"
+import { failedAudits, level, projectsQuery, succeededAudits, user, userInfo, xp } from "./query.js"
 
 export const infoUser = async () => {
     document.body.innerHTML = profilHtml
@@ -16,6 +16,7 @@ export const infoUser = async () => {
     logOut()
     xpUNDlevel(xp, level)
     displayProject(projectsQuery)
+    auditSvg(failedAudits, succeededAudits)
 }
 const displayUserInfo = async (user) => {
     const info = await Fetch(user)
@@ -89,15 +90,13 @@ const convertXp = (num) => {
 }
 const displayProject = async (project) => {
     const projects = await Fetch(project)
-    console.log(typeof projects.data.user[0].transactions);
+
     const dataProject = projects.data.user[0].transactions
 
     const divProject = document.createElement("div")
     divProject.setAttribute("class", "div-project")
 
     dataProject.forEach(element => {
-        console.log(element.object.progresses[0].group.members);
-
         const div = document.createElement("div")
         div.className = "project-row"
         const divName = document.createElement("div")
@@ -117,15 +116,87 @@ const displayProject = async (project) => {
         divMember.className = "project-member"
 
         members.forEach(element => {
-            console.log(element.userLogin);
             const a = document.createElement("a")
-            a.href=`https://learn.zone01oujda.ma/git/${element.userLogin}`
+            a.href = `https://learn.zone01oujda.ma/git/${element.userLogin}`
             a.innerHTML = element.userLogin
             divMember.appendChild(a)
 
         })
         div.append(divName, divXp, divMember)
-       divProject.append(div)
+        divProject.append(div)
     })
-     document.body.append(divProject)
+    document.body.append(divProject)
+}
+const auditSvg = async (failedD, succeeded) => {
+    const respFailed = await Fetch(failedD)
+    const respSucceeded = await Fetch(succeeded)
+    const countFailed = respFailed.data.user[0].audits_aggregate.aggregate.count
+    const countSucceeded = respSucceeded.data.user[0].audits_aggregate.aggregate.count
+    const total = countSucceeded + countFailed
+    const successRatio = countSucceeded / total;
+    const failedRatio = countFailed / total;
+    const circleLength = 2 * Math.PI * 90; // محيط الدائرة
+    const successStroke = circleLength * successRatio;
+    const failedStroke = circleLength * failedRatio;
+    const divSvg = document.createElement("div")
+    const svgg = document.createElement("div")
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("width", "200");
+    svg.setAttribute("height", "200");
+    const bg = document.createElementNS(svgNS, "circle");
+    bg.setAttribute("cx", "100");
+    bg.setAttribute("cy", "100");
+    bg.setAttribute("r", "90");
+    bg.setAttribute("stroke", "#eee");
+    bg.setAttribute("stroke-width", "20");
+    bg.setAttribute("fill", "none");
+    svg.appendChild(bg);
+    const success = document.createElementNS(svgNS, "circle");
+    success.setAttribute("cx", "100");
+    success.setAttribute("cy", "100");
+    success.setAttribute("r", "90");
+    success.setAttribute("stroke", "green");
+    success.setAttribute("stroke-width", "20");
+    success.setAttribute("fill", "none");
+    success.setAttribute("stroke-dasharray", `${successStroke} ${circleLength}`);
+    success.setAttribute("stroke-dashoffset", "0");
+    const text = document.createElementNS(svgNS, "text")
+    text.setAttribute("x", "100")
+    text.setAttribute("y", "110")
+    text.setAttribute("text-anchor", "middle")
+    text.setAttribute("font-size", "30")
+    text.textContent = `${total} 
+    Audits`
+
+    svg.append(success, text);
+    svgg.append(svg)
+    const failed = document.createElementNS(svgNS, "circle");
+    failed.setAttribute("cx", "100")
+    failed.setAttribute("cy", "100")
+    failed.setAttribute("r", "90")
+    failed.setAttribute("stroke", "red")
+    failed.setAttribute("stroke-width", "20")
+    failed.setAttribute("fill", "none")
+    failed.setAttribute("stroke-dasharray", `${failedStroke} ${circleLength}`)
+    failed.setAttribute("stroke-dashoffset", `-${successStroke}`)
+    svg.append(failed)
+    svgg.append(svg)
+    divSvg.append(svgg)
+
+    const info = document.createElement("div")
+    const pS = document.createElement("p")
+    pS.innerHTML = `success-audits ✅: ${Math.round(successRatio * 100)}%`
+    pS.style.color = "green"
+    const pF = document.createElement("p")
+    pF.innerHTML = `failed-audits❌: ${Math.round(failedRatio * 100)}% `
+    pF.style.color = "red"
+    info.append(pS, pF)
+    info.style.margin = "20px"
+    divSvg.append(info)
+    divSvg.style.display = "flex"
+    divSvg.style.justifyContent = "center"
+    divSvg.style.alignItems = "center"
+    divSvg.style.fontFamily = "sans-serif"
+    document.body.append(divSvg)
 }

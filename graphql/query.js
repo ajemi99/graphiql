@@ -60,3 +60,24 @@ export const projectsQuery = `
       }
 }
 `;
+export const failedAudits = `
+{
+  user{
+    audits_aggregate(where: {closureType:{_eq: failed}}){
+      aggregate{
+        count
+      }
+   }
+  }
+}`
+export const succeededAudits= `
+{
+  user{
+    audits_aggregate(where : {closureType:{_eq : succeeded}}){
+      aggregate{
+        count      
+      }
+    }
+  }
+}
+`
